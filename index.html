@@ -1,0 +1,2643 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FermentTwin | LYDRA 발효 모니터링 시스템</title>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #f6f7fb;
+      --card:#ffffff;
+      --text:#1f2430;
+      --muted:#6b7280;
+      --line:#e8eaf2;
+      --brand:#6d45ff;
+      --brand2:#8b5cf6;
+      --ok:#16a34a;
+      --warn:#f59e0b;
+      --bad:#ef4444;
+      --shadow: 0 8px 20px rgba(20, 25, 40, .06);
+      --radius: 14px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", Arial, "Apple SD Gothic Neo";
+      color:var(--text);
+      background:var(--bg);
+      overflow-x:hidden;
+    }
+    .app{
+      display:grid;
+      grid-template-columns: 220px 1fr;
+      height:100vh;
+      gap:0;
+    }
+    /* Sidebar */
+    .sidebar{
+      background: var(--card);
+      padding:16px;
+      color:var(--text);
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      box-shadow: 2px 0 10px rgba(0,0,0,.03);
+      border-right: 1px solid var(--line);
+      overflow-y:auto;
+    }
+    .logo{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:12px;
+      padding-bottom:16px;
+      border-bottom: 2px solid var(--line);
+    }
+    .logo-icon{
+      width:100%;
+      max-width:120px;
+      height:auto;
+      display:block;
+    }
+    .logo-text{
+      font-weight:700;
+      font-size:13px;
+      color:var(--text);
+      text-align:center;
+      line-height:1.3;
+    }
+    
+    .nav{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .nav-section{
+      margin-bottom:12px;
+    }
+    .nav-title{
+      font-size:10px;
+      font-weight:700;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+      margin-bottom:6px;
+      padding:0 10px;
+    }
+    .nav button{
+      width:100%;
+      border:0;
+      border-radius:10px;
+      background: transparent;
+      color:var(--text);
+      cursor:pointer;
+      padding:10px 12px;
+      transition:.15s;
+      font-size:13px;
+      text-align:left;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:500;
+    }
+    .nav button:hover{ background: #f2f3fb; }
+    .nav button.active{ 
+      background: linear-gradient(135deg, var(--brand), var(--brand2));
+      color:#fff;
+      font-weight:600;
+    }
+
+    /* Main */
+    .main{
+      display:flex;
+      flex-direction:column;
+      height:100vh;
+      overflow-y:auto;
+      background:var(--bg);
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      background: var(--card);
+      border-bottom: 1px solid var(--line);
+      padding:12px 20px;
+      position:sticky;
+      top:0;
+      z-index:10;
+      box-shadow: 0 2px 8px rgba(20,25,40,.04);
+    }
+    .topbar-left{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .topbar-right{
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .pill{
+      background: #f2f3fb;
+      border:1px solid var(--line);
+      border-radius: 8px;
+      padding:6px 12px;
+      display:flex; 
+      align-items:center; 
+      gap:6px;
+      white-space:nowrap;
+      font-size:12px;
+      font-weight:500;
+    }
+
+    .content{
+      padding:16px;
+      max-width:1600px;
+      margin:0 auto;
+      width:100%;
+    }
+
+    .banner{
+      background: linear-gradient(135deg, #ffe9cc, #fff3df);
+      border-radius: var(--radius);
+      padding:16px 20px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,200,100,.3);
+      margin-bottom:16px;
+    }
+    .banner h1{
+      margin:0; 
+      font-size:20px;
+      font-weight:800;
+      color:#1f2430;
+    }
+    .banner p{
+      margin:6px 0 0; 
+      color:#6b4f2a; 
+      font-size:12px; 
+      line-height:1.4;
+    }
+
+    /* Tank comparison grid */
+    .tank-grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+      margin-bottom:16px;
+    }
+
+    .tank-card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:14px;
+      box-shadow: var(--shadow);
+      cursor:pointer;
+      transition:.2s;
+    }
+    .tank-card:hover{
+      box-shadow: 0 12px 28px rgba(20,25,40,.1);
+      transform: translateY(-2px);
+    }
+
+    .tank-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:12px;
+      padding-bottom:10px;
+      border-bottom: 2px solid var(--line);
+    }
+
+    .tank-name{
+      font-size:16px;
+      font-weight:800;
+      color:var(--text);
+    }
+
+    .tank-status{
+      padding:4px 10px;
+      border-radius:12px;
+      font-size:10px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:0.3px;
+    }
+    .status-ok{ background:#d1fae5; color:#065f46; }
+    .status-warning{ background:#fef3c7; color:#92400e; }
+    .status-danger{ background:#fee2e2; color:#991b1b; }
+
+    .sensor-grid{
+      display:grid;
+      gap:8px;
+    }
+
+    .sensor-row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:8px 10px;
+      background:#f9fafb;
+      border:1px solid var(--line);
+      border-radius:8px;
+      gap:8px;
+    }
+
+    .sensor-info{
+      flex:1;
+      min-width:0;
+    }
+
+    .sensor-label{
+      font-size:10px;
+      font-weight:600;
+      color:var(--muted);
+      display:block;
+      margin-bottom:2px;
+    }
+
+    .sensor-value-wrapper{
+      display:flex;
+      align-items:baseline;
+      gap:3px;
+    }
+
+    .sensor-value{
+      font-size:18px;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    .sensor-unit{
+      font-size:10px;
+      font-weight:600;
+      color:var(--muted);
+    }
+
+    .sensor-indicator{
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      flex-shrink:0;
+    }
+
+    .sensor-change{
+      font-size:9px;
+      color:var(--muted);
+      margin-top:2px;
+      font-weight:600;
+    }
+    .sensor-change.up{ color:var(--bad); }
+    .sensor-change.down{ color:var(--ok); }
+
+    /* Chart section */
+    .chart-section{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:16px;
+      box-shadow: var(--shadow);
+    }
+
+    .chart-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:12px;
+      flex-wrap:wrap;
+      gap:10px;
+    }
+
+    .chart-title{
+      font-size:16px;
+      font-weight:800;
+    }
+
+    .chart-subtitle{
+      font-size:11px;
+      color:var(--muted);
+      margin-top:2px;
+    }
+
+    .chart-controls{
+      display:flex;
+      gap:6px;
+      flex-wrap:wrap;
+    }
+
+    .chart-btn{
+      padding:5px 10px;
+      border:1px solid var(--line);
+      background:#f9fafb;
+      border-radius:6px;
+      font-size:11px;
+      font-weight:600;
+      cursor:pointer;
+      transition:.2s;
+    }
+    .chart-btn:hover{
+      background:var(--brand);
+      color:#fff;
+      border-color:var(--brand);
+    }
+    .chart-btn.active{
+      background:var(--brand);
+      color:#fff;
+      border-color:var(--brand);
+    }
+
+    .chartWrap{ 
+      height:280px; 
+      position:relative; 
+    }
+
+    .control-panel{
+      display:flex;
+      gap:8px;
+      margin-top:12px;
+      flex-wrap:wrap;
+    }
+
+    .btn{
+      border:0;
+      border-radius:8px;
+      padding:8px 14px;
+      cursor:pointer;
+      font-size:12px;
+      font-weight:600;
+      transition: .2s;
+      display:flex;
+      align-items:center;
+      gap:5px;
+    }
+    .btn:hover{ transform: translateY(-1px); }
+    .btn-secondary{
+      background:#f2f3fb;
+      border:1px solid var(--line);
+      color:var(--text);
+    }
+    .btn-primary{
+      background:var(--brand);
+      color:#fff;
+    }
+
+    /* Tank detail page */
+    .detail-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+      margin-top:16px;
+    }
+    
+    .detail-card{
+      background: var(--card);
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      padding:16px;
+      box-shadow: var(--shadow);
+    }
+
+    .detail-title{
+      font-size:14px;
+      font-weight:700;
+      margin-bottom:12px;
+      color:var(--text);
+    }
+
+    .stat-grid{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:12px;
+    }
+
+    .stat-item{
+      padding:12px;
+      background:#f9fafb;
+      border:1px solid var(--line);
+      border-radius:10px;
+    }
+
+    .stat-label{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:600;
+      margin-bottom:4px;
+    }
+
+    .stat-value{
+      font-size:20px;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    .history-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:12px;
+    }
+
+    .history-table th{
+      text-align:left;
+      padding:10px;
+      background:#f9fafb;
+      border-bottom:2px solid var(--line);
+      font-weight:700;
+      color:var(--muted);
+      font-size:11px;
+    }
+
+    .history-table td{
+      padding:10px;
+      border-bottom:1px solid var(--line);
+    }
+
+    /* Analytics view */
+    .analytics-grid{
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap:16px;
+      margin-top:16px;
+    }
+
+    .kpi-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:20px;
+      box-shadow:var(--shadow);
+      text-align:center;
+    }
+
+    .kpi-label{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:600;
+      margin-bottom:8px;
+    }
+
+    .kpi-value{
+      font-size:32px;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    .kpi-change{
+      font-size:11px;
+      margin-top:4px;
+      font-weight:600;
+    }
+    .kpi-change.positive{ color:var(--ok); }
+    .kpi-change.negative{ color:var(--bad); }
+
+    /* Alert items */
+    .alert-item{
+      padding:12px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:10px;
+      margin-bottom:10px;
+      display:flex;
+      gap:12px;
+      align-items:flex-start;
+    }
+
+    .alert-icon{
+      width:36px;
+      height:36px;
+      border-radius:8px;
+      display:grid;
+      place-items:center;
+      font-size:18px;
+      flex-shrink:0;
+    }
+    .alert-icon.warning{ background:#fef3c7; }
+    .alert-icon.danger{ background:#fee2e2; }
+    .alert-icon.info{ background:#dbeafe; }
+
+    .alert-content{
+      flex:1;
+    }
+
+    .alert-title{
+      font-size:13px;
+      font-weight:700;
+      margin-bottom:4px;
+    }
+
+    .alert-desc{
+      font-size:11px;
+      color:var(--muted);
+      line-height:1.4;
+    }
+
+    .alert-time{
+      font-size:10px;
+      color:var(--muted);
+      margin-top:4px;
+    }
+
+    /* Prediction view */
+    .pred-layout{
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      gap:16px;
+      margin-top:16px;
+    }
+    .pred-sidebar{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .pred-tank-selector{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+    .pred-section-title{
+      font-size:12px;
+      font-weight:700;
+      color:var(--muted);
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+      margin-bottom:10px;
+    }
+    .pred-tank-btn{
+      width:100%;
+      padding:12px 14px;
+      border:2px solid var(--line);
+      border-radius:10px;
+      background:#f9fafb;
+      cursor:pointer;
+      transition:.2s;
+      font-size:13px;
+      font-weight:600;
+      text-align:left;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:6px;
+      color:var(--text);
+    }
+    .pred-tank-btn:last-child{ margin-bottom:0; }
+    .pred-tank-btn:hover{ border-color:var(--brand); background:#f2f3fb; }
+    .pred-tank-btn.active{
+      border-color:var(--brand);
+      background:linear-gradient(135deg, rgba(109,69,255,.08), rgba(139,92,246,.08));
+      color:var(--brand);
+    }
+    .pred-tank-btn .tank-dot{
+      width:8px; height:8px; border-radius:50%; background:var(--ok);
+    }
+    .pred-algo-selector{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      box-shadow:var(--shadow);
+    }
+    .pred-algo-btn{
+      width:100%;
+      padding:11px 14px;
+      border:2px solid var(--line);
+      border-radius:10px;
+      background:#f9fafb;
+      cursor:pointer;
+      transition:.2s;
+      font-size:12px;
+      font-weight:600;
+      text-align:left;
+      margin-bottom:6px;
+      color:var(--text);
+      line-height:1.4;
+    }
+    .pred-algo-btn:last-child{ margin-bottom:0; }
+    .pred-algo-btn:hover{ border-color:var(--brand); background:#f2f3fb; }
+    .pred-algo-btn.active{
+      border-color:var(--brand);
+      background:linear-gradient(135deg, var(--brand), var(--brand2));
+      color:#fff;
+    }
+    .pred-algo-btn .algo-tag{
+      display:inline-block;
+      padding:2px 6px;
+      border-radius:4px;
+      font-size:9px;
+      font-weight:700;
+      letter-spacing:0.3px;
+      margin-bottom:4px;
+    }
+    .pred-algo-btn .algo-tag.tft{ background:rgba(239,68,68,.15); color:#dc2626; }
+    .pred-algo-btn .algo-tag.tcn{ background:rgba(59,130,246,.15); color:#2563eb; }
+    .pred-algo-btn .algo-tag.lstm{ background:rgba(22,163,74,.15); color:#15803d; }
+    .pred-algo-btn.active .algo-tag{ background:rgba(255,255,255,.25); color:#fff; }
+
+    .pred-main{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .pred-result-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:24px;
+      box-shadow:var(--shadow);
+    }
+    .pred-result-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:20px;
+      padding-bottom:14px;
+      border-bottom:2px solid var(--line);
+    }
+    .pred-result-title{
+      font-size:18px;
+      font-weight:800;
+    }
+    .pred-algo-badge{
+      padding:5px 12px;
+      border-radius:8px;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:0.3px;
+    }
+    .pred-algo-badge.tft{ background:rgba(239,68,68,.1); color:#dc2626; }
+    .pred-algo-badge.tcn{ background:rgba(59,130,246,.1); color:#2563eb; }
+    .pred-algo-badge.lstm{ background:rgba(22,163,74,.1); color:#15803d; }
+
+    .pred-metrics{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:16px;
+    }
+    .pred-metric-box{
+      padding:20px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:#f9fafb;
+    }
+    .pred-metric-label{
+      font-size:11px;
+      font-weight:700;
+      color:var(--muted);
+      margin-bottom:8px;
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+    .pred-metric-value{
+      font-size:32px;
+      font-weight:900;
+      margin-bottom:4px;
+      color:var(--text);
+    }
+    .pred-metric-unit{
+      font-size:14px;
+      font-weight:600;
+      color:var(--muted);
+    }
+    .pred-metric-sub{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:600;
+      margin-top:6px;
+    }
+
+    .pred-gauge-wrap{
+      margin-top:14px;
+    }
+    .pred-gauge-header{
+      display:flex;
+      justify-content:space-between;
+      font-size:10px;
+      font-weight:600;
+      color:var(--muted);
+      margin-bottom:5px;
+    }
+    .pred-gauge-track{
+      width:100%;
+      height:12px;
+      background:#e5e7eb;
+      border-radius:6px;
+      overflow:hidden;
+      position:relative;
+    }
+    .pred-gauge-fill{
+      height:100%;
+      border-radius:6px;
+      transition: width 0.6s ease;
+    }
+    .pred-gauge-marker{
+      position:absolute;
+      top:-4px;
+      width:3px;
+      height:20px;
+      background:var(--text);
+      border-radius:2px;
+      transition: left 0.6s ease;
+    }
+    .pred-remaining{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-top:10px;
+      padding:8px 12px;
+      border-radius:8px;
+      font-size:12px;
+      font-weight:700;
+    }
+    .pred-remaining.close{
+      background:rgba(22,163,74,.08);
+      color:#15803d;
+    }
+    .pred-remaining.mid{
+      background:rgba(245,158,11,.08);
+      color:#92400e;
+    }
+    .pred-remaining.far{
+      background:rgba(239,68,68,.08);
+      color:#dc2626;
+    }
+
+    .pred-trend-card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:20px;
+      box-shadow:var(--shadow);
+    }
+    .pred-trend-title{
+      font-size:14px;
+      font-weight:800;
+      margin-bottom:14px;
+    }
+    .pred-timeline{
+      display:flex;
+      align-items:stretch;
+      gap:0;
+      overflow-x:auto;
+      padding-bottom:6px;
+    }
+    .pred-timeline-item{
+      flex:1;
+      min-width:55px;
+      text-align:center;
+      position:relative;
+      padding:10px 4px;
+    }
+    .pred-timeline-bar{
+      width:100%;
+      height:60px;
+      border-radius:6px 6px 0 0;
+      margin-bottom:6px;
+      position:relative;
+      display:flex;
+      align-items:flex-end;
+      justify-content:center;
+    }
+    .pred-timeline-fill{
+      width:100%;
+      border-radius:6px 6px 0 0;
+      transition: height 0.4s ease;
+    }
+    .pred-timeline-label{
+      font-size:9px;
+      font-weight:700;
+      color:var(--muted);
+    }
+    .pred-timeline-val{
+      font-size:10px;
+      font-weight:800;
+      color:var(--text);
+      margin-top:2px;
+    }
+    .pred-timeline-now{
+      border:2px solid var(--brand);
+      border-radius:8px;
+      background:rgba(109,69,255,.04);
+    }
+
+    .pred-info-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr 1fr;
+      gap:12px;
+    }
+    .pred-info-item{
+      padding:14px;
+      background:#f9fafb;
+      border:1px solid var(--line);
+      border-radius:10px;
+      text-align:center;
+    }
+    .pred-info-label{
+      font-size:10px;
+      font-weight:700;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .pred-info-value{
+      font-size:20px;
+      font-weight:900;
+      color:var(--text);
+    }
+
+    @media (max-width: 1400px){
+      .pred-layout{ grid-template-columns: 1fr; }
+      .pred-sidebar{ flex-direction:row; flex-wrap:wrap; }
+      .pred-tank-selector, .pred-algo-selector{ flex:1; min-width:220px; }
+    }
+    @media (max-width: 900px){
+      .pred-metrics{ grid-template-columns: 1fr; }
+      .pred-info-grid{ grid-template-columns: 1fr; }
+    }
+
+    /* Views */
+    .view{ display:none; }
+    .view.active{ display:block; }
+
+    /* Tank list */
+    .tank-list{
+      display:grid;
+      gap:12px;
+      margin-top:16px;
+    }
+
+    .tank-list-item{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:16px;
+      cursor:pointer;
+      transition:.2s;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      box-shadow:var(--shadow);
+    }
+
+    .tank-list-item:hover{
+      box-shadow: 0 12px 28px rgba(20,25,40,.1);
+      transform: translateY(-2px);
+    }
+
+    .tank-list-info h3{
+      margin:0 0 6px 0;
+      font-size:18px;
+      font-weight:800;
+    }
+
+    .tank-list-info p{
+      margin:0;
+      font-size:12px;
+      color:var(--muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 1400px){
+      .tank-grid{ grid-template-columns: repeat(2, 1fr); }
+      .analytics-grid{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 900px){
+      .app{ grid-template-columns: 1fr; }
+      .sidebar{ 
+        flex-direction:row;
+        justify-content:space-between;
+        padding:12px;
+        border-right:0;
+        border-bottom:1px solid var(--line);
+      }
+      .nav{ flex-direction:row; flex-wrap:wrap; }
+      .nav-title{ display:none; }
+      .tank-grid{ grid-template-columns: 1fr; }
+      .detail-grid{ grid-template-columns: 1fr; }
+      .analytics-grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <img src="lydra-logo.jpg" alt="LYDRA Logo" class="logo-icon" />
+      <div class="logo-text">FermentTwin<br/>실시간 모니터링 시스템</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">모니터링</div>
+      <nav class="nav">
+        <button class="active" data-view="dashboard">대시보드</button>
+        <button data-view="tanks">탱크 관리</button>
+      </nav>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">데이터 분석</div>
+      <nav class="nav">
+        <button data-view="analytics">분석</button>
+        <button data-view="reports">리포트</button>
+        <button data-view="prediction">발효예측</button>
+      </nav>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-title">시스템</div>
+      <nav class="nav">
+        <button data-view="alerts">알림 관리</button>
+        <button data-view="settings">설정</button>
+      </nav>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div style="font-size:16px; font-weight:700;">FermentTwin 실시간 모니터링</div>
+      </div>
+      <div class="topbar-right">
+        <div class="pill">📅 <span id="currentDate">2025.01.16</span></div>
+        <div class="pill">🕒 <span id="currentTime">--</span></div>
+        <div class="pill">🧪 Batch <b style="margin-left:4px">#A-102</b></div>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Dashboard View -->
+      <section id="view-dashboard" class="view active">
+        <div class="banner">
+          <h1>실시간 발효 상태 모니터링</h1>
+          <p>
+            발효 공정의 핵심 지표(온도, pH, CO₂, 당도)를 2초 간격으로 수집하여 실시간 모니터링합니다. 
+            5분 단위 변화량을 함께 표시하여 공정 이상 유무를 즉각 파악할 수 있습니다.
+          </p>
+        </div>
+
+        <!-- Tank Comparison Grid -->
+        <div class="tank-grid">
+          <!-- Tank 01 -->
+          <div class="tank-card" data-tank-detail="01">
+            <div class="tank-header">
+              <div class="tank-name">Tank-01</div>
+              <div class="tank-status status-ok" id="status-01">정상</div>
+            </div>
+            <div class="sensor-grid">
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">온도 (적정: 20~25°C)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="temp-01">23.2</span>
+                    <span class="sensor-unit">°C</span>
+                  </div>
+                  <div class="sensor-change" id="temp-change-01">5분: +0.0°C</div>
+                </div>
+                <div class="sensor-indicator" id="ind-temp-01" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">pH (유효: 3.2~4.2)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="ph-01">3.75</span>
+                  </div>
+                  <div class="sensor-change" id="ph-change-01">5분: +0.00</div>
+                </div>
+                <div class="sensor-indicator" id="ind-ph-01" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">CO₂ (범위: 0~10%)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="co2-01">4.2</span>
+                    <span class="sensor-unit">%</span>
+                  </div>
+                  <div class="sensor-change" id="co2-change-01">5분: +0.0%</div>
+                </div>
+                <div class="sensor-indicator" id="ind-co2-01" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">당도 (범위: 0~20°Bx)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="brix-01">12.8</span>
+                    <span class="sensor-unit">°Bx</span>
+                  </div>
+                  <div class="sensor-change down" id="brix-change-01">5분: -0.0°Bx</div>
+                </div>
+                <div class="sensor-indicator" id="ind-brix-01" style="background:#16a34a"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tank 02 -->
+          <div class="tank-card" data-tank-detail="02">
+            <div class="tank-header">
+              <div class="tank-name">Tank-02</div>
+              <div class="tank-status status-ok" id="status-02">정상</div>
+            </div>
+            <div class="sensor-grid">
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">온도 (적정: 20~25°C)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="temp-02">22.8</span>
+                    <span class="sensor-unit">°C</span>
+                  </div>
+                  <div class="sensor-change" id="temp-change-02">5분: +0.0°C</div>
+                </div>
+                <div class="sensor-indicator" id="ind-temp-02" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">pH (유효: 3.2~4.2)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="ph-02">3.85</span>
+                  </div>
+                  <div class="sensor-change" id="ph-change-02">5분: +0.00</div>
+                </div>
+                <div class="sensor-indicator" id="ind-ph-02" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">CO₂ (범위: 0~10%)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="co2-02">3.9</span>
+                    <span class="sensor-unit">%</span>
+                  </div>
+                  <div class="sensor-change" id="co2-change-02">5분: +0.0%</div>
+                </div>
+                <div class="sensor-indicator" id="ind-co2-02" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">당도 (범위: 0~20°Bx)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="brix-02">11.5</span>
+                    <span class="sensor-unit">°Bx</span>
+                  </div>
+                  <div class="sensor-change down" id="brix-change-02">5분: -0.0°Bx</div>
+                </div>
+                <div class="sensor-indicator" id="ind-brix-02" style="background:#16a34a"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tank 03 -->
+          <div class="tank-card" data-tank-detail="03">
+            <div class="tank-header">
+              <div class="tank-name">Tank-03</div>
+              <div class="tank-status status-ok" id="status-03">정상</div>
+            </div>
+            <div class="sensor-grid">
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">온도 (적정: 20~25°C)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="temp-03">24.1</span>
+                    <span class="sensor-unit">°C</span>
+                  </div>
+                  <div class="sensor-change" id="temp-change-03">5분: +0.0°C</div>
+                </div>
+                <div class="sensor-indicator" id="ind-temp-03" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">pH (유효: 3.2~4.2)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="ph-03">3.65</span>
+                  </div>
+                  <div class="sensor-change" id="ph-change-03">5분: +0.00</div>
+                </div>
+                <div class="sensor-indicator" id="ind-ph-03" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">CO₂ (범위: 0~10%)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="co2-03">4.5</span>
+                    <span class="sensor-unit">%</span>
+                  </div>
+                  <div class="sensor-change" id="co2-change-03">5분: +0.0%</div>
+                </div>
+                <div class="sensor-indicator" id="ind-co2-03" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">당도 (범위: 0~20°Bx)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="brix-03">13.5</span>
+                    <span class="sensor-unit">°Bx</span>
+                  </div>
+                  <div class="sensor-change down" id="brix-change-03">5분: -0.0°Bx</div>
+                </div>
+                <div class="sensor-indicator" id="ind-brix-03" style="background:#16a34a"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tank 04 -->
+          <div class="tank-card" data-tank-detail="04">
+            <div class="tank-header">
+              <div class="tank-name">Tank-04</div>
+              <div class="tank-status status-ok" id="status-04">정상</div>
+            </div>
+            <div class="sensor-grid">
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">온도 (적정: 20~25°C)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="temp-04">23.6</span>
+                    <span class="sensor-unit">°C</span>
+                  </div>
+                  <div class="sensor-change" id="temp-change-04">5분: +0.0°C</div>
+                </div>
+                <div class="sensor-indicator" id="ind-temp-04" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">pH (유효: 3.2~4.2)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="ph-04">3.80</span>
+                  </div>
+                  <div class="sensor-change" id="ph-change-04">5분: +0.00</div>
+                </div>
+                <div class="sensor-indicator" id="ind-ph-04" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">CO₂ (범위: 0~10%)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="co2-04">4.1</span>
+                    <span class="sensor-unit">%</span>
+                  </div>
+                  <div class="sensor-change" id="co2-change-04">5분: +0.0%</div>
+                </div>
+                <div class="sensor-indicator" id="ind-co2-04" style="background:#16a34a"></div>
+              </div>
+              
+              <div class="sensor-row">
+                <div class="sensor-info">
+                  <span class="sensor-label">당도 (범위: 0~20°Bx)</span>
+                  <div class="sensor-value-wrapper">
+                    <span class="sensor-value" id="brix-04">12.3</span>
+                    <span class="sensor-unit">°Bx</span>
+                  </div>
+                  <div class="sensor-change down" id="brix-change-04">5분: -0.0°Bx</div>
+                </div>
+                <div class="sensor-indicator" id="ind-brix-04" style="background:#16a34a"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart Section -->
+        <div class="chart-section">
+          <div class="chart-header">
+            <div>
+              <div class="chart-title">센서 데이터 트렌드 (5분 단위)</div>
+              <div class="chart-subtitle">오전 9시 ~ 오후 6시 데이터 표시 (2초 간격 수집 → 5분 평균)</div>
+            </div>
+            <div class="chart-controls">
+              <button class="chart-btn active" data-tank="01">Tank-01</button>
+              <button class="chart-btn" data-tank="02">Tank-02</button>
+              <button class="chart-btn" data-tank="03">Tank-03</button>
+              <button class="chart-btn" data-tank="04">Tank-04</button>
+            </div>
+          </div>
+          <div class="chartWrap">
+            <canvas id="trendChart"></canvas>
+          </div>
+          <div class="control-panel">
+            <button id="btnPause" class="btn btn-secondary">⏸ 일시정지</button>
+            <button id="btnReset" class="btn btn-secondary">🔄 초기화</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Tank Management View -->
+      <section id="view-tanks" class="view">
+        <div class="banner">
+          <h1>탱크 관리</h1>
+          <p>각 탱크를 클릭하여 상세 정보 및 이벤트 로그를 확인하세요.</p>
+        </div>
+
+        <div id="tank-list-view">
+          <div class="tank-list">
+            <div class="tank-list-item" data-detail-tank="01">
+              <div class="tank-list-info">
+                <h3>Tank-01</h3>
+                <p>용량: 1000L | 배치: #A-102 | 센서: 온도, pH, CO₂, 당도 | MQTT 연결: 정상</p>
+              </div>
+              <div class="tank-status status-ok" id="list-status-01">정상</div>
+            </div>
+            <div class="tank-list-item" data-detail-tank="02">
+              <div class="tank-list-info">
+                <h3>Tank-02</h3>
+                <p>용량: 1000L | 배치: #A-103 | 센서: 온도, pH, CO₂, 당도 | MQTT 연결: 정상</p>
+              </div>
+              <div class="tank-status status-ok" id="list-status-02">정상</div>
+            </div>
+            <div class="tank-list-item" data-detail-tank="03">
+              <div class="tank-list-info">
+                <h3>Tank-03</h3>
+                <p>용량: 1000L | 배치: #A-104 | 센서: 온도, pH, CO₂, 당도 | MQTT 연결: 정상</p>
+              </div>
+              <div class="tank-status status-ok" id="list-status-03">정상</div>
+            </div>
+            <div class="tank-list-item" data-detail-tank="04">
+              <div class="tank-list-info">
+                <h3>Tank-04</h3>
+                <p>용량: 1000L | 배치: #A-105 | 센서: 온도, pH, CO₂, 당도 | MQTT 연결: 정상</p>
+              </div>
+              <div class="tank-status status-ok" id="list-status-04">정상</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="tank-detail-view" style="display:none">
+          <button id="backToList" class="btn btn-secondary" style="margin-bottom:16px">← 목록으로</button>
+          
+          <div class="chart-section" style="margin-bottom:16px">
+            <h2 style="margin:0 0 8px 0; font-size:24px" id="detailTankName">Tank-01</h2>
+            <p style="margin:0; color:var(--muted); font-size:13px">배치: <span id="detailBatchId">#A-102</span> | 용량: 1000L | 가동일수: 12일 | MQTT 프로토콜 연결</p>
+          </div>
+
+          <div class="detail-grid">
+            <div class="detail-card">
+              <div class="detail-title">실시간 센서 데이터</div>
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <div class="stat-label">온도</div>
+                  <div class="stat-value"><span id="detail-temp">23.2</span><span style="font-size:14px; color:var(--muted)">°C</span></div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">pH</div>
+                  <div class="stat-value" id="detail-ph">3.75</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">CO₂</div>
+                  <div class="stat-value"><span id="detail-co2">4.2</span><span style="font-size:14px; color:var(--muted)">%</span></div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-label">당도</div>
+                  <div class="stat-value"><span id="detail-brix">12.8</span><span style="font-size:14px; color:var(--muted)">°Bx</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="detail-card">
+              <div class="detail-title">센서 트렌드 차트 (5분 단위)</div>
+              <div style="height:200px">
+                <canvas id="detailChart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="detail-card" style="margin-top:16px">
+            <div class="detail-title">최근 이벤트 로그 (임계치 이탈)</div>
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>시간</th>
+                  <th>센서</th>
+                  <th>내용</th>
+                  <th>상태</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>2025.01.16 14:23</td>
+                  <td>온도</td>
+                  <td>26.5°C (적정 범위 초과)</td>
+                  <td><span style="color:var(--warn)">●</span> 해결됨</td>
+                </tr>
+                <tr>
+                  <td>2025.01.16 11:15</td>
+                  <td>시스템</td>
+                  <td>센서 캘리브레이션 완료</td>
+                  <td><span style="color:var(--ok)">●</span> 완료</td>
+                </tr>
+                <tr>
+                  <td>2025.01.16 09:30</td>
+                  <td>pH</td>
+                  <td>pH 4.3 (유효 범위 초과)</td>
+                  <td><span style="color:var(--warn)">●</span> 해결됨</td>
+                </tr>
+                <tr>
+                  <td>2025.01.15 16:45</td>
+                  <td>CO₂</td>
+                  <td>CO₂ 8.2% (높음)</td>
+                  <td><span style="color:var(--warn)">●</span> 해결됨</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Analytics View -->
+      <section id="view-analytics" class="view">
+        <div class="banner">
+          <h1>발효 분석</h1>
+          <p>배치별 비교 분석 및 디지털 트윈 기반 성능 지표를 확인하세요.</p>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">평균 발효 효율</div>
+            <div class="kpi-value">87.3<span style="font-size:18px">%</span></div>
+            <div class="kpi-change positive">↑ 2.4% vs 지난주</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">평균 발효 시간</div>
+            <div class="kpi-value">11.2<span style="font-size:18px">일</span></div>
+            <div class="kpi-change positive">↓ 0.8일 단축</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">품질 적합률</div>
+            <div class="kpi-value">96.5<span style="font-size:18px">%</span></div>
+            <div class="kpi-change positive">↑ 1.2%</div>
+          </div>
+        </div>
+
+        <div class="detail-grid" style="margin-top:16px">
+          <div class="chart-section">
+            <div class="chart-title" style="margin-bottom:12px">탱크별 발효 진행률</div>
+            <div style="height:280px">
+              <canvas id="analyticsChart1"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-section">
+            <div class="chart-title" style="margin-bottom:12px">주간 평균 온도 추이</div>
+            <div style="height:280px">
+              <canvas id="analyticsChart2"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-section" style="margin-top:16px">
+          <div class="chart-title" style="margin-bottom:12px">배치 성능 비교</div>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>배치 ID</th>
+                <th>탱크</th>
+                <th>시작일</th>
+                <th>예상 종료</th>
+                <th>진행률</th>
+                <th>품질 점수</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>#A-102</b></td>
+                <td>Tank-01</td>
+                <td>2025.01.04</td>
+                <td>2025.01.18</td>
+                <td><b>86%</b></td>
+                <td><span style="color:var(--ok)">● 94점</span></td>
+              </tr>
+              <tr>
+                <td><b>#A-103</b></td>
+                <td>Tank-02</td>
+                <td>2025.01.06</td>
+                <td>2025.01.20</td>
+                <td><b>71%</b></td>
+                <td><span style="color:var(--ok)">● 92점</span></td>
+              </tr>
+              <tr>
+                <td><b>#A-104</b></td>
+                <td>Tank-03</td>
+                <td>2025.01.05</td>
+                <td>2025.01.19</td>
+                <td><b>79%</b></td>
+                <td><span style="color:var(--ok)">● 96점</span></td>
+              </tr>
+              <tr>
+                <td><b>#A-105</b></td>
+                <td>Tank-04</td>
+                <td>2025.01.07</td>
+                <td>2025.01.21</td>
+                <td><b>64%</b></td>
+                <td><span style="color:var(--ok)">● 91점</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Reports View -->
+      <section id="view-reports" class="view">
+        <div class="banner">
+          <h1>발효 리포트</h1>
+          <p>기간별 통계 및 리포트를 확인하세요. (2025년 10월 ~ 현재)</p>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">총 생산량 (월간)</div>
+            <div class="kpi-value">3,450<span style="font-size:18px">L</span></div>
+            <div class="kpi-change positive">↑ 12% vs 지난달</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">가동률</div>
+            <div class="kpi-value">94.2<span style="font-size:18px">%</span></div>
+            <div class="kpi-change positive">↑ 3.1%</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">알림 발생 건수</div>
+            <div class="kpi-value">23<span style="font-size:18px">건</span></div>
+            <div class="kpi-change negative">↑ 5건</div>
+          </div>
+        </div>
+
+        <div class="chart-section" style="margin-top:16px">
+          <div class="chart-title" style="margin-bottom:12px">월별 생산량 추이 (2025.10 ~ 2026.01)</div>
+          <div style="height:300px">
+            <canvas id="reportChart"></canvas>
+          </div>
+        </div>
+
+        <div class="detail-grid" style="margin-top:16px">
+          <div class="chart-section">
+            <div class="detail-title">이번 주 요약</div>
+            <div class="stat-grid">
+              <div class="stat-item">
+                <div class="stat-label">완료 배치</div>
+                <div class="stat-value">7<span style="font-size:14px; color:var(--muted)">건</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">진행 중</div>
+                <div class="stat-value">4<span style="font-size:14px; color:var(--muted)">건</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">평균 품질</div>
+                <div class="stat-value">93.5<span style="font-size:14px; color:var(--muted)">점</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="stat-label">알림 처리율</div>
+                <div class="stat-value">100<span style="font-size:14px; color:var(--muted)">%</span></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-section">
+            <div class="detail-title">주요 이슈</div>
+            <div style="padding:12px 0">
+              <div style="padding:10px; background:#fef3c7; border-radius:8px; margin-bottom:8px">
+                <div style="font-weight:700; font-size:12px; margin-bottom:4px">⚠️ 온도 임계치 이탈 (Tank-01)</div>
+                <div style="font-size:11px; color:#92400e">1월 16일 3회 발생, 환기 시스템 점검 권장</div>
+              </div>
+              <div style="padding:10px; background:#d1fae5; border-radius:8px">
+                <div style="font-weight:700; font-size:12px; margin-bottom:4px">✓ 모든 센서 정상</div>
+                <div style="font-size:11px; color:#065f46">MQTT 연결 안정, 데이터 수집률 99.8%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Prediction View -->
+      <section id="view-prediction" class="view">
+        <div class="banner">
+          <h1>발효예측 (AI 알고리즘 기반)</h1>
+          <p>
+            TFT / TCN 알고리즘별 예측 결과를 비교하여 각 탱크의 최종 발효 도수와 완료 시점을 동시에 확인할 수 있습니다.
+          </p>
+        </div>
+
+        <div class="pred-layout">
+          <!-- Left: Tank & Algorithm Selection -->
+          <div class="pred-sidebar">
+            <div class="pred-tank-selector">
+              <div class="pred-section-title">탱크 선택</div>
+              <button class="pred-tank-btn active" data-pred-tank="01">
+                <span>🧪 Tank-01 <span style="font-size:11px;color:var(--muted)">(#A-102)</span></span>
+                <span class="tank-dot"></span>
+              </button>
+              <button class="pred-tank-btn" data-pred-tank="02">
+                <span>🧪 Tank-02 <span style="font-size:11px;color:var(--muted)">(#A-103)</span></span>
+                <span class="tank-dot"></span>
+              </button>
+              <button class="pred-tank-btn" data-pred-tank="03">
+                <span>🧪 Tank-03 <span style="font-size:11px;color:var(--muted)">(#A-104)</span></span>
+                <span class="tank-dot"></span>
+              </button>
+              <button class="pred-tank-btn" data-pred-tank="04">
+                <span>🧪 Tank-04 <span style="font-size:11px;color:var(--muted)">(#A-105)</span></span>
+                <span class="tank-dot"></span>
+              </button>
+            </div>
+
+            <div class="pred-algo-selector">
+              <div class="pred-section-title">알고리즘 선택</div>
+              <button class="pred-algo-btn active" data-pred-algo="tft">
+                <div><span class="algo-tag tft">TFT</span></div>
+                Temporal Fusion Transformer<br/>
+                <span style="font-size:10px; opacity:.7">발효 도수 예측에 최적화</span>
+              </button>
+              <button class="pred-algo-btn" data-pred-algo="tcn">
+                <div><span class="algo-tag tcn">TCN</span></div>
+                Temporal Convolutional Network<br/>
+                <span style="font-size:10px; opacity:.7">완료 시점 예측에 최적화</span>
+              </button>
+            </div>
+
+            <!-- Algorithm comparison note -->
+            <div style="background:#f9fafb;border:1px solid var(--line);border-radius:var(--radius);padding:14px;font-size:11px;color:var(--muted);line-height:1.5;">
+              <div style="font-weight:700;color:var(--text);margin-bottom:6px;">📌 알고리즘 비교 안내</div>
+              <b>TFT</b>는 발효 도수 예측에 높은 정확도를 보이며, <b>TCN</b>은 완료 시점 예측에 강점이 있습니다.
+              두 알고리즘의 결과를 비교하여 최적의 판단을 내리세요.
+            </div>
+          </div>
+
+          <!-- Right: Both predictions shown simultaneously -->
+          <div class="pred-main">
+            <!-- Header: selected algorithm badge -->
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-size:14px;font-weight:800;" id="pred-main-title">Tank-01 예측 결과</div>
+              <span class="pred-algo-badge tft" id="pred-main-badge">TFT 알고리즘 적용 중</span>
+            </div>
+
+            <!-- Card 1: 발효 도수 예측 -->
+            <div class="pred-result-card">
+              <div class="pred-result-header">
+                <div class="pred-result-title">🎯 발효 도수 예측</div>
+                <span class="pred-algo-badge tft" id="pred-abv-badge" style="font-size:10px;">TFT 기반</span>
+              </div>
+              <div class="pred-metrics">
+                <div class="pred-metric-box">
+                  <div class="pred-metric-label">예측 최종 도수</div>
+                  <div><span class="pred-metric-value" id="pred-abv-value">14.8</span><span class="pred-metric-unit"> %ABV</span></div>
+                  <div class="pred-metric-sub" id="pred-abv-target">기준값: 15.0 %ABV</div>
+                  <div class="pred-gauge-wrap">
+                    <div class="pred-gauge-header">
+                      <span>0%</span>
+                      <span>예측 도수 달성률</span>
+                      <span>100%</span>
+                    </div>
+                    <div class="pred-gauge-track">
+                      <div class="pred-gauge-fill" id="pred-abv-fill" style="width:82%;background:linear-gradient(90deg,#6d45ff,#8b5cf6)"></div>
+                      <div class="pred-gauge-marker" id="pred-abv-marker" style="left:calc(100% - 3px)"></div>
+                    </div>
+                  </div>
+                  <div class="pred-remaining mid" id="pred-abv-remain">
+                    <span>📊</span> 기준값까지 <b>0.2 %ABV</b> 남음
+                  </div>
+                </div>
+                <div class="pred-metric-box">
+                  <div class="pred-metric-label">📈 현재 도수 (추정)</div>
+                  <div><span class="pred-metric-value" id="pred-abv-current">12.3</span><span class="pred-metric-unit"> %ABV</span></div>
+                  <div class="pred-metric-sub" id="pred-abv-elapsed">경과: 58시간</div>
+                  <div class="pred-info-grid" style="margin-top:14px">
+                    <div class="pred-info-item">
+                      <div class="pred-info-label">신뢰도</div>
+                      <div class="pred-info-value" id="pred-abv-conf">92%</div>
+                    </div>
+                    <div class="pred-info-item">
+                      <div class="pred-info-label">오차범위</div>
+                      <div class="pred-info-value" id="pred-abv-err">±0.3</div>
+                    </div>
+                    <div class="pred-info-item">
+                      <div class="pred-info-label">변화율/h</div>
+                      <div class="pred-info-value" id="pred-abv-rate">+0.08</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2: 완료 시점 예측 -->
+            <div class="pred-result-card">
+              <div class="pred-result-header">
+                <div class="pred-result-title">⏱ 완료 시점 예측</div>
+                <span class="pred-algo-badge tcn" id="pred-time-badge" style="font-size:10px;">TCN 기반</span>
+              </div>
+              <div class="pred-metrics">
+                <div class="pred-metric-box">
+                  <div class="pred-metric-label">예측 총 소요 시간</div>
+                  <div><span class="pred-metric-value" id="pred-time-value">86</span><span class="pred-metric-unit"> 시간</span></div>
+                  <div class="pred-metric-sub" id="pred-time-target">기준 완료: 96시간 (4.0일)</div>
+                  <div class="pred-gauge-wrap">
+                    <div class="pred-gauge-header">
+                      <span>0h</span>
+                      <span>경과 시간</span>
+                      <span id="pred-time-gauge-max">96h</span>
+                    </div>
+                    <div class="pred-gauge-track">
+                      <div class="pred-gauge-fill" id="pred-time-fill" style="width:60%;background:linear-gradient(90deg,#3b82f6,#60a5fa)"></div>
+                      <div class="pred-gauge-marker" id="pred-time-marker" style="left:calc(89.5% - 1.5px)"></div>
+                    </div>
+                  </div>
+                  <div class="pred-remaining mid" id="pred-time-remain">
+                    <span>⏳</span> 완료까지 약 <b>28시간</b> 남음
+                  </div>
+                </div>
+                <div class="pred-metric-box">
+                  <div class="pred-metric-label">📅 예상 완료 일시</div>
+                  <div><span class="pred-metric-value" id="pred-time-date" style="font-size:24px">03/06 14:00</span></div>
+                  <div class="pred-metric-sub" id="pred-time-started">시작: 03/04 00:00 | 경과: 58시간</div>
+                  <div class="pred-info-grid" style="margin-top:14px">
+                    <div class="pred-info-item">
+                      <div class="pred-info-label">신뢰도</div>
+                      <div class="pred-info-value" id="pred-time-conf">89%</div>
+                    </div>
+                    <div class="pred-info-item">
+                      <div class="pred-info-label">오차범위</div>
+                      <div class="pred-info-value" id="pred-time-err">±3h</div>
+                    </div>
+                    <div class="pred-info-item">
+                      <div class="pred-info-label">진행률</div>
+                      <div class="pred-info-value" id="pred-time-progress">60%</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Alerts View -->
+      <section id="view-alerts" class="view">
+        <div class="banner">
+          <h1>알림 관리</h1>
+          <p>임계치 이탈 알림 및 이벤트 로그를 관리합니다.</p>
+        </div>
+
+        <div class="analytics-grid">
+          <div class="kpi-card">
+            <div class="kpi-label">이번 주 알림</div>
+            <div class="kpi-value">23<span style="font-size:18px">건</span></div>
+            <div class="kpi-change negative">↑ 5건 증가</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">미해결 알림</div>
+            <div class="kpi-value">0<span style="font-size:18px">건</span></div>
+            <div class="kpi-change positive">모두 처리됨</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-label">평균 처리 시간</div>
+            <div class="kpi-value">12<span style="font-size:18px">분</span></div>
+            <div class="kpi-change positive">↓ 3분 단축</div>
+          </div>
+        </div>
+
+        <div class="detail-grid" style="margin-top:16px">
+          <div class="chart-section">
+            <div class="detail-title">알림 유형별 발생 현황</div>
+            <div style="height:280px">
+              <canvas id="alertChart1"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-section">
+            <div class="detail-title">일별 알림 발생 추이</div>
+            <div style="height:280px">
+              <canvas id="alertChart2"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-section" style="margin-top:16px">
+          <div class="detail-title">최근 알림 이력</div>
+          <div style="max-height:400px; overflow-y:auto; padding:8px 0">
+            <div class="alert-item">
+              <div class="alert-icon warning">⚠️</div>
+              <div class="alert-content">
+                <div class="alert-title">Tank-01 온도 임계치 초과</div>
+                <div class="alert-desc">온도가 26.5°C로 상승하여 적정 범위(20~25°C)를 벗어났습니다.</div>
+                <div class="alert-time">2025.01.16 14:23 | 처리완료</div>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-icon warning">⚠️</div>
+              <div class="alert-content">
+                <div class="alert-title">Tank-02 pH 임계치 이탈</div>
+                <div class="alert-desc">pH 4.3으로 유효 범위(3.2~4.2)를 초과했습니다.</div>
+                <div class="alert-time">2025.01.16 11:42 | 처리완료</div>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-icon info">ℹ️</div>
+              <div class="alert-content">
+                <div class="alert-title">센서 캘리브레이션 완료</div>
+                <div class="alert-desc">모든 탱크의 센서 캘리브레이션이 정상적으로 완료되었습니다.</div>
+                <div class="alert-time">2025.01.16 09:00 | 완료</div>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-icon warning">⚠️</div>
+              <div class="alert-content">
+                <div class="alert-title">Tank-01 pH 임계치 이탈</div>
+                <div class="alert-desc">pH 4.3으로 유효 범위(3.2~4.2)를 초과했습니다.</div>
+                <div class="alert-time">2025.01.15 16:30 | 처리완료</div>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-icon danger">🚨</div>
+              <div class="alert-content">
+                <div class="alert-title">Tank-03 CO₂ 높은 수치</div>
+                <div class="alert-desc">CO₂ 농도가 8.2%로 측정되어 주의가 필요합니다.</div>
+                <div class="alert-time">2025.01.15 14:15 | 처리완료</div>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-icon warning">⚠️</div>
+              <div class="alert-content">
+                <div class="alert-title">Tank-04 온도 임계치 초과</div>
+                <div class="alert-desc">온도가 26.2°C로 상승하여 적정 범위를 벗어났습니다.</div>
+                <div class="alert-time">2025.01.15 11:20 | 처리완료</div>
+              </div>
+            </div>
+
+            <div class="alert-item">
+              <div class="alert-icon info">ℹ️</div>
+              <div class="alert-content">
+                <div class="alert-title">MQTT 연결 재수립</div>
+                <div class="alert-desc">Tank-02의 MQTT 연결이 일시적으로 끊겼다가 자동 재연결되었습니다.</div>
+                <div class="alert-time">2025.01.14 18:45 | 완료</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings View -->
+      <section id="view-settings" class="view">
+        <div class="chart-section">
+          <div class="chart-title">시스템 설정</div>
+          <p style="color:var(--muted); margin-top:12px;">
+            임계치 설정, 센서 매핑, MQTT 게이트웨이 설정 등을 관리합니다.
+          </p>
+          <div style="margin-top:20px; padding:16px; background:#f9fafb; border-radius:10px">
+            <h3 style="margin:0 0 12px 0; font-size:14px">현재 설정값</h3>
+            <div style="display:grid; gap:10px; font-size:12px">
+              <div style="display:flex; justify-content:space-between">
+                <span style="color:var(--muted)">온도 임계치 (하한)</span>
+                <b>20°C</b>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="color:var(--muted)">온도 임계치 (상한)</span>
+                <b>25°C</b>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="color:var(--muted)">pH 유효 범위</span>
+                <b>3.2 ~ 4.2</b>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="color:var(--muted)">CO₂ 측정 범위</span>
+                <b>0 ~ 10%</b>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="color:var(--muted)">당도 측정 범위</span>
+                <b>0 ~ 20°Bx</b>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="color:var(--muted)">데이터 수집 주기</span>
+                <b>2초</b>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="color:var(--muted)">차트 표시 주기</span>
+                <b>5분 평균</b>
+              </div>
+              <div style="display:flex; justify-content:space-between">
+                <span style="color:var(--muted)">MQTT 프로토콜</span>
+                <b>활성화</b>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+// State
+let isPaused = false;
+let currentTank = '01';
+let currentDetailTank = '01';
+
+// Tank sensor data with 5-minute history
+let tankData = {
+  '01': { temp: 23.2, ph: 3.75, co2: 4.2, brix: 12.8, tempPrev: 23.2, phPrev: 3.75, co2Prev: 4.2, brixPrev: 12.8 },
+  '02': { temp: 22.8, ph: 3.85, co2: 3.9, brix: 11.5, tempPrev: 22.8, phPrev: 3.85, co2Prev: 3.9, brixPrev: 11.5 },
+  '03': { temp: 24.1, ph: 3.65, co2: 4.5, brix: 13.5, tempPrev: 24.1, phPrev: 3.65, co2Prev: 4.5, brixPrev: 13.5 },
+  '04': { temp: 23.6, ph: 3.80, co2: 4.1, brix: 12.3, tempPrev: 23.6, phPrev: 3.80, co2Prev: 4.1, brixPrev: 12.3 }
+};
+
+// Chart data for 5-minute intervals (9 AM to 6 PM = 108 data points)
+let chartDataByTank = {
+  '01': { labels: [], temp: [], ph: [], co2: [], brix: [] },
+  '02': { labels: [], temp: [], ph: [], co2: [], brix: [] },
+  '03': { labels: [], temp: [], ph: [], co2: [], brix: [] },
+  '04': { labels: [], temp: [], ph: [], co2: [], brix: [] }
+};
+
+// Generate initial time labels (9:00 to 18:00, every 5 minutes)
+function generateTimeLabels() {
+  const labels = [];
+  for (let hour = 9; hour <= 18; hour++) {
+    for (let min = 0; min < 60; min += 5) {
+      if (hour === 18 && min > 0) break;
+      labels.push(`${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`);
+    }
+  }
+  return labels;
+}
+
+// Initialize with data from 9:00 to 16:30 (current time)
+const timeLabels = generateTimeLabels();
+Object.keys(chartDataByTank).forEach(tankId => {
+  chartDataByTank[tankId].labels = [...timeLabels];
+  
+  const baseTemp = tankId === '01' ? 23.2 : tankId === '02' ? 22.8 : tankId === '03' ? 24.1 : 23.6;
+  const basePh = tankId === '01' ? 3.75 : tankId === '02' ? 3.85 : tankId === '03' ? 3.65 : 3.80;
+  const baseCo2 = tankId === '01' ? 4.2 : tankId === '02' ? 3.9 : tankId === '03' ? 4.5 : 4.1;
+  const baseBrix = tankId === '01' ? 12.8 : tankId === '02' ? 11.5 : tankId === '03' ? 13.5 : 12.3;
+  
+  chartDataByTank[tankId].temp = new Array(timeLabels.length).fill(null);
+  chartDataByTank[tankId].ph = new Array(timeLabels.length).fill(null);
+  chartDataByTank[tankId].co2 = new Array(timeLabels.length).fill(null);
+  chartDataByTank[tankId].brix = new Array(timeLabels.length).fill(null);
+  
+  // Fill data from 9:00 to 16:30 (90 data points = 7.5 hours * 12 points per hour)
+  for (let i = 0; i < 90; i++) {
+    const tempVariation = Math.sin(i / 10) * 0.8 + (Math.random() - 0.5) * 0.5;
+    const phVariation = Math.sin(i / 15) * 0.08 + (Math.random() - 0.5) * 0.05;
+    const co2Variation = Math.sin(i / 12) * 0.3 + (Math.random() - 0.5) * 0.2;
+    const brixDecrease = i * 0.008; // Gradual decrease over time
+    
+    chartDataByTank[tankId].temp[i] = baseTemp + tempVariation;
+    chartDataByTank[tankId].ph[i] = basePh + phVariation;
+    chartDataByTank[tankId].co2[i] = baseCo2 + co2Variation;
+    chartDataByTank[tankId].brix[i] = baseBrix - brixDecrease + (Math.random() - 0.5) * 0.2;
+  }
+});
+
+let currentTimeIndex = 90;
+let updateCounter = 0;
+
+// Charts
+let trendChart;
+let detailChart;
+let analyticsChart1;
+let analyticsChart2;
+let reportChart;
+let alertChart1;
+let alertChart2;
+
+function initCharts() {
+  // Main trend chart
+  const ctx = document.getElementById('trendChart');
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: chartDataByTank[currentTank].labels,
+      datasets: [
+        {
+          label: '온도 (°C)',
+          data: chartDataByTank[currentTank].temp,
+          borderColor: '#ef4444',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 2,
+          spanGaps: true
+        },
+        {
+          label: 'pH',
+          data: chartDataByTank[currentTank].ph,
+          borderColor: '#8b5cf6',
+          backgroundColor: 'rgba(139, 92, 246, 0.1)',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 2,
+          spanGaps: true
+        },
+        {
+          label: 'CO₂ (%)',
+          data: chartDataByTank[currentTank].co2,
+          borderColor: '#16a34a',
+          backgroundColor: 'rgba(22, 163, 74, 0.1)',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 2,
+          yAxisID: 'y1',
+          spanGaps: true
+        },
+        {
+          label: '당도 (°Bx)',
+          data: chartDataByTank[currentTank].brix,
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245, 158, 11, 0.1)',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 2,
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {
+        mode: 'index',
+        intersect: false,
+      },
+      plugins: {
+        legend: {
+          display: true,
+          position: 'bottom',
+          labels: {
+            padding: 12,
+            font: { size: 11, weight: '600' },
+            usePointStyle: true
+          }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          padding: 10,
+          titleFont: { size: 12, weight: '600' },
+          bodyFont: { size: 11 }
+        }
+      },
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          grid: { color: '#e8eaf2' },
+          ticks: { font: { size: 10 } }
+        },
+        y1: {
+          type: 'linear',
+          display: true,
+          position: 'right',
+          grid: { drawOnChartArea: false },
+          ticks: { font: { size: 10 } }
+        },
+        x: {
+          grid: { color: '#e8eaf2' },
+          ticks: {
+            font: { size: 9 },
+            maxRotation: 45,
+            minRotation: 45,
+            autoSkip: true,
+            maxTicksLimit: 20
+          }
+        }
+      }
+    }
+  });
+
+  // Detail chart
+  const detailCtx = document.getElementById('detailChart');
+  detailChart = new Chart(detailCtx, {
+    type: 'line',
+    data: {
+      labels: chartDataByTank['01'].labels,
+      datasets: [
+        {
+          label: '온도',
+          data: chartDataByTank['01'].temp,
+          borderColor: '#ef4444',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 2,
+          spanGaps: true
+        },
+        {
+          label: 'pH',
+          data: chartDataByTank['01'].ph,
+          borderColor: '#8b5cf6',
+          tension: 0.3,
+          borderWidth: 2,
+          pointRadius: 2,
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true, position: 'bottom', labels: { font: { size: 10 } } }
+      },
+      scales: {
+        y: { ticks: { font: { size: 9 } } },
+        x: { ticks: { font: { size: 9 }, maxRotation: 45, autoSkip: true, maxTicksLimit: 15 } }
+      }
+    }
+  });
+
+  // Analytics chart 1 - Bar chart
+  const analyticsCtx1 = document.getElementById('analyticsChart1');
+  analyticsChart1 = new Chart(analyticsCtx1, {
+    type: 'bar',
+    data: {
+      labels: ['Tank-01', 'Tank-02', 'Tank-03', 'Tank-04'],
+      datasets: [{
+        label: '발효 진행률 (%)',
+        data: [86, 71, 79, 64],
+        backgroundColor: ['#6d45ff', '#8b5cf6', '#a78bfa', '#c4b5fd']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { font: { size: 10 } } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Analytics chart 2 - Line chart
+  const analyticsCtx2 = document.getElementById('analyticsChart2');
+  analyticsChart2 = new Chart(analyticsCtx2, {
+    type: 'line',
+    data: {
+      labels: ['월', '화', '수', '목', '금', '토', '일'],
+      datasets: [{
+        label: '평균 온도 (°C)',
+        data: [22.8, 23.2, 23.6, 23.1, 22.9, 23.4, 23.3],
+        borderColor: '#ef4444',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { ticks: { font: { size: 10 } } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Report chart (October 2025 to January 2026)
+  const reportCtx = document.getElementById('reportChart');
+  reportChart = new Chart(reportCtx, {
+    type: 'bar',
+    data: {
+      labels: ['2025년 10월', '2025년 11월', '2025년 12월', '2026년 1월'],
+      datasets: [{
+        label: '생산량 (L)',
+        data: [2950, 3200, 3080, 3450],
+        backgroundColor: '#16a34a'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { font: { size: 10 } } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Alert chart 1 - Pie chart
+  const alertCtx1 = document.getElementById('alertChart1');
+  alertChart1 = new Chart(alertCtx1, {
+    type: 'doughnut',
+    data: {
+      labels: ['온도', 'pH', 'CO₂', '시스템'],
+      datasets: [{
+        data: [9, 6, 5, 3],
+        backgroundColor: ['#ef4444', '#8b5cf6', '#16a34a', '#6b7280']
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } }
+      }
+    }
+  });
+
+  // Alert chart 2 - Bar chart
+  const alertCtx2 = document.getElementById('alertChart2');
+  alertChart2 = new Chart(alertCtx2, {
+    type: 'bar',
+    data: {
+      labels: ['월', '화', '수', '목', '금', '토', '일'],
+      datasets: [{
+        label: '알림 발생 건수',
+        data: [4, 3, 5, 2, 4, 3, 2],
+        backgroundColor: '#f59e0b'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { font: { size: 10 }, stepSize: 1 } },
+        x: { ticks: { font: { size: 11 } } }
+      }
+    }
+  });
+}
+
+// Update time
+function updateTime() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
+  });
+  document.getElementById('currentTime').textContent = timeStr;
+
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  document.getElementById('currentDate').textContent = `${y}.${m}.${d}`;
+}
+
+// Update sensor data (every 2 seconds, but chart updates every 5 minutes)
+function updateSensorData() {
+  if (isPaused) return;
+
+  updateCounter++;
+
+  Object.keys(tankData).forEach(tankId => {
+    const baseTemp = tankId === '01' ? 23.2 : tankId === '02' ? 22.8 : tankId === '03' ? 24.1 : 23.6;
+    const basePh = tankId === '01' ? 3.75 : tankId === '02' ? 3.85 : tankId === '03' ? 3.65 : 3.80;
+    const baseCo2 = tankId === '01' ? 4.2 : tankId === '02' ? 3.9 : tankId === '03' ? 4.5 : 4.1;
+    const baseBrix = tankId === '01' ? 12.8 : tankId === '02' ? 11.5 : tankId === '03' ? 13.5 : 12.3;
+
+    tankData[tankId].temp = baseTemp + (Math.random() - 0.5) * 1.2;
+    tankData[tankId].ph = basePh + (Math.random() - 0.5) * 0.15;
+    tankData[tankId].co2 = baseCo2 + (Math.random() - 0.5) * 0.6;
+    tankData[tankId].brix = baseBrix + (Math.random() - 0.5) * 0.5;
+
+    // Update UI
+    document.getElementById(`temp-${tankId}`).textContent = tankData[tankId].temp.toFixed(1);
+    document.getElementById(`ph-${tankId}`).textContent = tankData[tankId].ph.toFixed(2);
+    document.getElementById(`co2-${tankId}`).textContent = tankData[tankId].co2.toFixed(1);
+    document.getElementById(`brix-${tankId}`).textContent = tankData[tankId].brix.toFixed(1);
+
+    // Update 5-minute change indicators
+    const tempChange = tankData[tankId].temp - tankData[tankId].tempPrev;
+    const phChange = tankData[tankId].ph - tankData[tankId].phPrev;
+    const co2Change = tankData[tankId].co2 - tankData[tankId].co2Prev;
+    const brixChange = tankData[tankId].brix - tankData[tankId].brixPrev;
+
+    document.getElementById(`temp-change-${tankId}`).textContent = `5분: ${tempChange >= 0 ? '+' : ''}${tempChange.toFixed(1)}°C`;
+    document.getElementById(`ph-change-${tankId}`).textContent = `5분: ${phChange >= 0 ? '+' : ''}${phChange.toFixed(2)}`;
+    document.getElementById(`co2-change-${tankId}`).textContent = `5분: ${co2Change >= 0 ? '+' : ''}${co2Change.toFixed(1)}%`;
+    document.getElementById(`brix-change-${tankId}`).textContent = `5분: ${brixChange >= 0 ? '+' : ''}${brixChange.toFixed(1)}°Bx`;
+
+    // Update color classes
+    document.getElementById(`temp-change-${tankId}`).className = `sensor-change ${tempChange > 0 ? 'up' : ''}`;
+    document.getElementById(`brix-change-${tankId}`).className = `sensor-change down`;
+
+    updateIndicators(tankId);
+    updateTankStatus(tankId);
+  });
+
+  // Update chart every 5 minutes (150 updates of 2 seconds = 300 seconds = 5 minutes)
+  if (updateCounter >= 150) {
+    updateCounter = 0;
+    
+    Object.keys(tankData).forEach(tankId => {
+      if (currentTimeIndex < timeLabels.length) {
+        chartDataByTank[tankId].temp[currentTimeIndex] = tankData[tankId].temp;
+        chartDataByTank[tankId].ph[currentTimeIndex] = tankData[tankId].ph;
+        chartDataByTank[tankId].co2[currentTimeIndex] = tankData[tankId].co2;
+        chartDataByTank[tankId].brix[currentTimeIndex] = tankData[tankId].brix;
+
+        // Save as previous value for next 5-minute comparison
+        tankData[tankId].tempPrev = tankData[tankId].temp;
+        tankData[tankId].phPrev = tankData[tankId].ph;
+        tankData[tankId].co2Prev = tankData[tankId].co2;
+        tankData[tankId].brixPrev = tankData[tankId].brix;
+      }
+    });
+    
+    currentTimeIndex++;
+    updateChart();
+  }
+}
+
+function updateIndicators(tankId) {
+  const data = tankData[tankId];
+  
+  // Temperature (20-25°C is optimal)
+  let tempColor = '#16a34a';
+  if (data.temp > 25 || data.temp < 20) tempColor = '#f59e0b';
+  if (data.temp > 27 || data.temp < 18) tempColor = '#ef4444';
+  document.getElementById(`ind-temp-${tankId}`).style.background = tempColor;
+
+  // pH (3.2-4.2 is valid)
+  let phColor = '#16a34a';
+  if (data.ph < 3.2 || data.ph > 4.2) phColor = '#f59e0b';
+  if (data.ph < 2.8 || data.ph > 4.6) phColor = '#ef4444';
+  document.getElementById(`ind-ph-${tankId}`).style.background = phColor;
+
+  // CO₂ (0-10% range)
+  let co2Color = '#16a34a';
+  if (data.co2 > 7) co2Color = '#f59e0b';
+  if (data.co2 > 8.5) co2Color = '#ef4444';
+  document.getElementById(`ind-co2-${tankId}`).style.background = co2Color;
+
+  // Brix (always green - decreasing is normal)
+  document.getElementById(`ind-brix-${tankId}`).style.background = '#16a34a';
+}
+
+function updateTankStatus(tankId) {
+  const data = tankData[tankId];
+  const statusEl = document.getElementById(`status-${tankId}`);
+  const listStatusEl = document.getElementById(`list-status-${tankId}`);
+  
+  const tempOk = data.temp >= 20 && data.temp <= 25;
+  const phOk = data.ph >= 3.2 && data.ph <= 4.2;
+  const co2Ok = data.co2 <= 8.5;
+
+  let statusClass = 'tank-status ';
+  let statusText = '정상';
+  
+  if ((data.temp > 27 || data.temp < 18) || data.co2 > 8.5 || (data.ph < 2.8 || data.ph > 4.6)) {
+    statusClass += 'status-danger';
+    statusText = '위험';
+  } else if (!tempOk || !phOk || !co2Ok) {
+    statusClass += 'status-warning';
+    statusText = '경고';
+  } else {
+    statusClass += 'status-ok';
+  }
+
+  statusEl.className = statusClass;
+  statusEl.textContent = statusText;
+  
+  if (listStatusEl) {
+    listStatusEl.className = statusClass;
+    listStatusEl.textContent = statusText;
+  }
+}
+
+function updateChart() {
+  trendChart.data.labels = chartDataByTank[currentTank].labels;
+  trendChart.data.datasets[0].data = chartDataByTank[currentTank].temp;
+  trendChart.data.datasets[1].data = chartDataByTank[currentTank].ph;
+  trendChart.data.datasets[2].data = chartDataByTank[currentTank].co2;
+  trendChart.data.datasets[3].data = chartDataByTank[currentTank].brix;
+  trendChart.update('none');
+}
+
+function updateDetailView() {
+  if (document.getElementById('tank-detail-view').style.display !== 'none') {
+    const data = tankData[currentDetailTank];
+    document.getElementById('detail-temp').textContent = data.temp.toFixed(1);
+    document.getElementById('detail-ph').textContent = data.ph.toFixed(2);
+    document.getElementById('detail-co2').textContent = data.co2.toFixed(1);
+    document.getElementById('detail-brix').textContent = data.brix.toFixed(1);
+
+    detailChart.data.labels = chartDataByTank[currentDetailTank].labels;
+    detailChart.data.datasets[0].data = chartDataByTank[currentDetailTank].temp;
+    detailChart.data.datasets[1].data = chartDataByTank[currentDetailTank].ph;
+    detailChart.update('none');
+  }
+}
+
+function switchTank(tankId) {
+  currentTank = tankId;
+  document.querySelectorAll('[data-tank]').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`[data-tank="${tankId}"]`).classList.add('active');
+  updateChart();
+}
+
+function showTankDetail(tankId) {
+  currentDetailTank = tankId;
+  document.getElementById('tank-list-view').style.display = 'none';
+  document.getElementById('tank-detail-view').style.display = 'block';
+  
+  const tankNames = { '01': 'Tank-01', '02': 'Tank-02', '03': 'Tank-03', '04': 'Tank-04' };
+  const batchIds = { '01': '#A-102', '02': '#A-103', '03': '#A-104', '04': '#A-105' };
+  
+  document.getElementById('detailTankName').textContent = tankNames[tankId];
+  document.getElementById('detailBatchId').textContent = batchIds[tankId];
+  
+  updateDetailView();
+}
+
+function setupControls() {
+  document.getElementById('btnPause').addEventListener('click', function() {
+    isPaused = !isPaused;
+    this.innerHTML = isPaused ? '▶️ 재개' : '⏸ 일시정지';
+  });
+
+  document.getElementById('btnReset').addEventListener('click', function() {
+    tankData = {
+      '01': { temp: 23.2, ph: 3.75, co2: 4.2, brix: 12.8, tempPrev: 23.2, phPrev: 3.75, co2Prev: 4.2, brixPrev: 12.8 },
+      '02': { temp: 22.8, ph: 3.85, co2: 3.9, brix: 11.5, tempPrev: 22.8, phPrev: 3.85, co2Prev: 3.9, brixPrev: 11.5 },
+      '03': { temp: 24.1, ph: 3.65, co2: 4.5, brix: 13.5, tempPrev: 24.1, phPrev: 3.65, co2Prev: 4.5, brixPrev: 13.5 },
+      '04': { temp: 23.6, ph: 3.80, co2: 4.1, brix: 12.3, tempPrev: 23.6, phPrev: 3.80, co2Prev: 4.1, brixPrev: 12.3 }
+    };
+    
+    Object.keys(chartDataByTank).forEach(tankId => {
+      const baseTemp = tankId === '01' ? 23.2 : tankId === '02' ? 22.8 : tankId === '03' ? 24.1 : 23.6;
+      const basePh = tankId === '01' ? 3.75 : tankId === '02' ? 3.85 : tankId === '03' ? 3.65 : 3.80;
+      const baseCo2 = tankId === '01' ? 4.2 : tankId === '02' ? 3.9 : tankId === '03' ? 4.5 : 4.1;
+      const baseBrix = tankId === '01' ? 12.8 : tankId === '02' ? 11.5 : tankId === '03' ? 13.5 : 12.3;
+      
+      chartDataByTank[tankId].temp = new Array(timeLabels.length).fill(null);
+      chartDataByTank[tankId].ph = new Array(timeLabels.length).fill(null);
+      chartDataByTank[tankId].co2 = new Array(timeLabels.length).fill(null);
+      chartDataByTank[tankId].brix = new Array(timeLabels.length).fill(null);
+      
+      // Fill data from 9:00 to 16:30
+      for (let i = 0; i < 90; i++) {
+        const tempVariation = Math.sin(i / 10) * 0.8 + (Math.random() - 0.5) * 0.5;
+        const phVariation = Math.sin(i / 15) * 0.08 + (Math.random() - 0.5) * 0.05;
+        const co2Variation = Math.sin(i / 12) * 0.3 + (Math.random() - 0.5) * 0.2;
+        const brixDecrease = i * 0.008;
+        
+        chartDataByTank[tankId].temp[i] = baseTemp + tempVariation;
+        chartDataByTank[tankId].ph[i] = basePh + phVariation;
+        chartDataByTank[tankId].co2[i] = baseCo2 + co2Variation;
+        chartDataByTank[tankId].brix[i] = baseBrix - brixDecrease + (Math.random() - 0.5) * 0.2;
+      }
+    });
+    
+    currentTimeIndex = 90;
+    updateCounter = 0;
+    updateChart();
+    updateSensorData();
+  });
+
+  document.getElementById('backToList').addEventListener('click', function() {
+    document.getElementById('tank-detail-view').style.display = 'none';
+    document.getElementById('tank-list-view').style.display = 'block';
+  });
+}
+
+function setupTankSelection() {
+  document.querySelectorAll('[data-tank]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      switchTank(this.dataset.tank);
+    });
+  });
+
+  document.querySelectorAll('[data-tank-detail]').forEach(card => {
+    card.addEventListener('click', function() {
+      const tankId = this.dataset.tankDetail;
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      document.querySelector('[data-view="tanks"]').classList.add('active');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-tanks').classList.add('active');
+      showTankDetail(tankId);
+    });
+  });
+
+  document.querySelectorAll('[data-detail-tank]').forEach(item => {
+    item.addEventListener('click', function() {
+      showTankDetail(this.dataset.detailTank);
+    });
+  });
+}
+
+function setupNavigation() {
+  document.querySelectorAll('[data-view]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const viewName = this.dataset.view;
+      
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('view-' + viewName).classList.add('active');
+      
+      document.querySelectorAll('.nav button').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+
+      if (viewName !== 'tanks') {
+        document.getElementById('tank-detail-view').style.display = 'none';
+        document.getElementById('tank-list-view').style.display = 'block';
+      }
+    });
+  });
+}
+
+// ===== PREDICTION MODULE =====
+let predCurrentTank = '01';
+let predCurrentAlgo = 'tft';
+
+// Each algorithm predicts BOTH abv and completion time (with different values)
+const predictionData = {
+  '01': {
+    tft: {
+      abv: { predicted: 14.8, target: 15.0, current: 12.3, confidence: 94, error: 0.2, ratePerH: 0.08 },
+      time: { predictedH: 89, targetH: 96, confidence: 86, errorH: 5 },
+      elapsed: 58
+    },
+    tcn: {
+      abv: { predicted: 14.5, target: 15.0, current: 12.1, confidence: 87, error: 0.5, ratePerH: 0.07 },
+      time: { predictedH: 86, targetH: 96, confidence: 91, errorH: 3 },
+      elapsed: 58
+    }
+  },
+  '02': {
+    tft: {
+      abv: { predicted: 13.5, target: 14.0, current: 10.8, confidence: 92, error: 0.3, ratePerH: 0.07 },
+      time: { predictedH: 82, targetH: 84, confidence: 83, errorH: 6 },
+      elapsed: 48
+    },
+    tcn: {
+      abv: { predicted: 13.2, target: 14.0, current: 10.5, confidence: 85, error: 0.6, ratePerH: 0.06 },
+      time: { predictedH: 78, targetH: 84, confidence: 90, errorH: 3 },
+      elapsed: 48
+    }
+  },
+  '03': {
+    tft: {
+      abv: { predicted: 15.2, target: 15.5, current: 11.5, confidence: 95, error: 0.2, ratePerH: 0.09 },
+      time: { predictedH: 96, targetH: 100, confidence: 84, errorH: 6 },
+      elapsed: 52
+    },
+    tcn: {
+      abv: { predicted: 14.9, target: 15.5, current: 11.2, confidence: 86, error: 0.5, ratePerH: 0.08 },
+      time: { predictedH: 92, targetH: 100, confidence: 93, errorH: 2 },
+      elapsed: 52
+    }
+  },
+  '04': {
+    tft: {
+      abv: { predicted: 14.2, target: 14.5, current: 9.8, confidence: 90, error: 0.3, ratePerH: 0.07 },
+      time: { predictedH: 84, targetH: 88, confidence: 82, errorH: 6 },
+      elapsed: 42
+    },
+    tcn: {
+      abv: { predicted: 13.8, target: 14.5, current: 9.5, confidence: 83, error: 0.6, ratePerH: 0.06 },
+      time: { predictedH: 80, targetH: 88, confidence: 88, errorH: 4 },
+      elapsed: 42
+    }
+  }
+};
+
+function updatePredictionView() {
+  const tank = predCurrentTank;
+  const algo = predCurrentAlgo;
+  const d = predictionData[tank][algo];
+  const abv = d.abv;
+  const time = d.time;
+  const elapsed = d.elapsed;
+  const tankNames = { '01':'Tank-01', '02':'Tank-02', '03':'Tank-03', '04':'Tank-04' };
+  const algoNames = { tft: 'TFT', tcn: 'TCN' };
+  const algoFull = { tft: 'Temporal Fusion Transformer', tcn: 'Temporal Convolutional Network' };
+
+  // Header
+  document.getElementById('pred-main-title').textContent = `${tankNames[tank]} 예측 결과`;
+  const mainBadge = document.getElementById('pred-main-badge');
+  mainBadge.textContent = `${algoNames[algo]} 알고리즘 적용 중`;
+  mainBadge.className = `pred-algo-badge ${algo}`;
+
+  // ABV badge
+  const abvBadge = document.getElementById('pred-abv-badge');
+  abvBadge.textContent = `${algoNames[algo]} 기반`;
+  abvBadge.className = `pred-algo-badge ${algo}`;
+
+  // Time badge
+  const timeBadge = document.getElementById('pred-time-badge');
+  timeBadge.textContent = `${algoNames[algo]} 기반`;
+  timeBadge.className = `pred-algo-badge ${algo}`;
+
+  // === ABV Card ===
+  document.getElementById('pred-abv-value').textContent = abv.predicted.toFixed(1);
+  document.getElementById('pred-abv-target').textContent = `기준값: ${abv.target.toFixed(1)} %ABV`;
+  document.getElementById('pred-abv-current').textContent = abv.current.toFixed(1);
+  document.getElementById('pred-abv-elapsed').textContent = `경과: ${elapsed}시간`;
+  document.getElementById('pred-abv-conf').textContent = abv.confidence + '%';
+  document.getElementById('pred-abv-err').textContent = '±' + abv.error.toFixed(1);
+  document.getElementById('pred-abv-rate').textContent = '+' + abv.ratePerH.toFixed(2);
+
+  const abvPct = Math.min((abv.current / abv.target * 100), 100).toFixed(0);
+  const abvPredPct = Math.min((abv.predicted / abv.target * 100), 100).toFixed(0);
+  document.getElementById('pred-abv-fill').style.width = abvPct + '%';
+  document.getElementById('pred-abv-fill').style.background = algo === 'tft'
+    ? 'linear-gradient(90deg,#6d45ff,#8b5cf6)'
+    : 'linear-gradient(90deg,#3b82f6,#60a5fa)';
+  document.getElementById('pred-abv-marker').style.left = `calc(${abvPredPct}% - 1.5px)`;
+
+  const abvDiff = Math.abs(abv.target - abv.predicted);
+  const remainAbvEl = document.getElementById('pred-abv-remain');
+  remainAbvEl.className = 'pred-remaining ' + (abvDiff <= 0.3 ? 'close' : abvDiff <= 1.0 ? 'mid' : 'far');
+  if (abv.predicted >= abv.target) {
+    remainAbvEl.innerHTML = '<span>✅</span> 기준값 <b>달성 예상</b> (' + abv.predicted.toFixed(1) + ' ≥ ' + abv.target.toFixed(1) + ')';
+  } else {
+    remainAbvEl.innerHTML = '<span>📊</span> 기준값까지 <b>' + abvDiff.toFixed(1) + ' %ABV</b> 남음';
+  }
+
+  // === Time Card ===
+  document.getElementById('pred-time-value').textContent = time.predictedH;
+  document.getElementById('pred-time-target').textContent = `기준 완료: ${time.targetH}시간 (${(time.targetH/24).toFixed(1)}일)`;
+
+  const now = new Date();
+  const startDate = new Date(now.getTime() - elapsed * 3600000);
+  const endDate = new Date(startDate.getTime() + time.predictedH * 3600000);
+  const fmtDate = (dt) => `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+
+  document.getElementById('pred-time-date').textContent = fmtDate(endDate);
+  document.getElementById('pred-time-started').textContent = `시작: ${fmtDate(startDate)} | 경과: ${elapsed}시간`;
+  document.getElementById('pred-time-conf').textContent = time.confidence + '%';
+  document.getElementById('pred-time-err').textContent = '±' + time.errorH + 'h';
+  const progressPct = (elapsed / time.predictedH * 100).toFixed(0);
+  document.getElementById('pred-time-progress').textContent = progressPct + '%';
+
+  const maxH = Math.max(time.targetH, time.predictedH);
+  document.getElementById('pred-time-gauge-max').textContent = maxH + 'h';
+  const elapsedPct = (elapsed / maxH * 100).toFixed(1);
+  const predTimePct = (time.predictedH / maxH * 100).toFixed(1);
+  document.getElementById('pred-time-fill').style.width = elapsedPct + '%';
+  document.getElementById('pred-time-fill').style.background = algo === 'tft'
+    ? 'linear-gradient(90deg,#6d45ff,#8b5cf6)'
+    : 'linear-gradient(90deg,#3b82f6,#60a5fa)';
+  document.getElementById('pred-time-marker').style.left = `calc(${Math.min(predTimePct, 100)}% - 1.5px)`;
+
+  const remainH = time.predictedH - elapsed;
+  const remainTimeEl = document.getElementById('pred-time-remain');
+  remainTimeEl.className = 'pred-remaining ' + (remainH <= 12 ? 'close' : remainH <= 36 ? 'mid' : 'far');
+  remainTimeEl.innerHTML = '<span>⏳</span> 완료까지 약 <b>' + remainH + '시간</b> (' + (remainH / 24).toFixed(1) + '일) 남음';
+}
+
+function setupPrediction() {
+  document.querySelectorAll('[data-pred-tank]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[data-pred-tank]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      predCurrentTank = this.dataset.predTank;
+      updatePredictionView();
+    });
+  });
+
+  document.querySelectorAll('[data-pred-algo]').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('[data-pred-algo]').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+      predCurrentAlgo = this.dataset.predAlgo;
+      updatePredictionView();
+    });
+  });
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+  initCharts();
+  setupControls();
+  setupTankSelection();
+  setupNavigation();
+  setupPrediction();
+  updatePredictionView();
+  
+  setInterval(updateTime, 1000);
+  setInterval(updateSensorData, 2000);
+  
+  updateTime();
+  updateSensorData();
+});
+</script>
+
+</body>
+</html>
