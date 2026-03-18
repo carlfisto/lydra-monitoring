@@ -1326,25 +1326,25 @@
               </thead>
               <tbody>
                 <tr>
-                  <td>2025.01.16 14:23</td>
+                  <td class="event-date" data-offset="0" data-hm="14:23"></td>
                   <td>온도</td>
                   <td>26.5°C (적정 범위 초과)</td>
                   <td><span style="color:var(--warn)">●</span> 해결됨</td>
                 </tr>
                 <tr>
-                  <td>2025.01.16 11:15</td>
+                  <td class="event-date" data-offset="0" data-hm="11:15"></td>
                   <td>시스템</td>
                   <td>센서 캘리브레이션 완료</td>
                   <td><span style="color:var(--ok)">●</span> 완료</td>
                 </tr>
                 <tr>
-                  <td>2025.01.16 09:30</td>
+                  <td class="event-date" data-offset="1" data-hm="09:30"></td>
                   <td>pH</td>
                   <td>pH 4.3 (유효 범위 초과)</td>
                   <td><span style="color:var(--warn)">●</span> 해결됨</td>
                 </tr>
                 <tr>
-                  <td>2025.01.15 16:45</td>
+                  <td class="event-date" data-offset="1" data-hm="16:45"></td>
                   <td>CO₂</td>
                   <td>CO₂ 8.2% (높음)</td>
                   <td><span style="color:var(--warn)">●</span> 해결됨</td>
@@ -1413,32 +1413,32 @@
               <tr>
                 <td><b>#A-102</b></td>
                 <td>Tank-01</td>
-                <td>2025.01.04</td>
-                <td>2025.01.18</td>
+                <td class="batch-start" data-days-ago="14"></td>
+                <td class="batch-end" data-days-ahead="0"></td>
                 <td><b>86%</b></td>
                 <td><span style="color:var(--ok)">● 94점</span></td>
               </tr>
               <tr>
                 <td><b>#A-103</b></td>
                 <td>Tank-02</td>
-                <td>2025.01.06</td>
-                <td>2025.01.20</td>
+                <td class="batch-start" data-days-ago="12"></td>
+                <td class="batch-end" data-days-ahead="2"></td>
                 <td><b>71%</b></td>
                 <td><span style="color:var(--ok)">● 92점</span></td>
               </tr>
               <tr>
                 <td><b>#A-104</b></td>
                 <td>Tank-03</td>
-                <td>2025.01.05</td>
-                <td>2025.01.19</td>
+                <td class="batch-start" data-days-ago="13"></td>
+                <td class="batch-end" data-days-ahead="1"></td>
                 <td><b>79%</b></td>
                 <td><span style="color:var(--ok)">● 96점</span></td>
               </tr>
               <tr>
                 <td><b>#A-105</b></td>
                 <td>Tank-04</td>
-                <td>2025.01.07</td>
-                <td>2025.01.21</td>
+                <td class="batch-start" data-days-ago="11"></td>
+                <td class="batch-end" data-days-ahead="3"></td>
                 <td><b>64%</b></td>
                 <td><span style="color:var(--ok)">● 91점</span></td>
               </tr>
@@ -1451,7 +1451,7 @@
       <section id="view-reports" class="view">
         <div class="banner">
           <h1>발효 리포트</h1>
-          <p>기간별 통계 및 리포트를 확인하세요. (2025년 10월 ~ 현재)</p>
+          <p>기간별 통계 및 리포트를 확인하세요. (<span id="reportPeriod"></span>)</p>
         </div>
 
         <div class="analytics-grid">
@@ -1729,7 +1729,7 @@
               <div class="alert-content">
                 <div class="alert-title">Tank-01 온도 임계치 초과</div>
                 <div class="alert-desc">온도가 26.5°C로 상승하여 적정 범위(20~25°C)를 벗어났습니다.</div>
-                <div class="alert-time">2025.01.16 14:23 | 처리완료</div>
+                <div class="alert-time" data-alert-offset="0" data-alert-hm="14:23">| 처리완료</div>
               </div>
             </div>
 
@@ -1738,7 +1738,7 @@
               <div class="alert-content">
                 <div class="alert-title">Tank-02 pH 임계치 이탈</div>
                 <div class="alert-desc">pH 4.3으로 유효 범위(3.2~4.2)를 초과했습니다.</div>
-                <div class="alert-time">2025.01.16 11:42 | 처리완료</div>
+                <div class="alert-time" data-alert-offset="0" data-alert-hm="11:42">| 처리완료</div>
               </div>
             </div>
 
@@ -1747,7 +1747,7 @@
               <div class="alert-content">
                 <div class="alert-title">센서 캘리브레이션 완료</div>
                 <div class="alert-desc">모든 탱크의 센서 캘리브레이션이 정상적으로 완료되었습니다.</div>
-                <div class="alert-time">2025.01.16 09:00 | 완료</div>
+                <div class="alert-time" data-alert-offset="0" data-alert-hm="09:00">| 완료</div>
               </div>
             </div>
 
@@ -1756,7 +1756,7 @@
               <div class="alert-content">
                 <div class="alert-title">Tank-01 pH 임계치 이탈</div>
                 <div class="alert-desc">pH 4.3으로 유효 범위(3.2~4.2)를 초과했습니다.</div>
-                <div class="alert-time">2025.01.15 16:30 | 처리완료</div>
+                <div class="alert-time" data-alert-offset="1" data-alert-hm="16:30">| 처리완료</div>
               </div>
             </div>
 
@@ -1765,7 +1765,7 @@
               <div class="alert-content">
                 <div class="alert-title">Tank-03 CO₂ 높은 수치</div>
                 <div class="alert-desc">CO₂ 농도가 8.2%로 측정되어 주의가 필요합니다.</div>
-                <div class="alert-time">2025.01.15 14:15 | 처리완료</div>
+                <div class="alert-time" data-alert-offset="1" data-alert-hm="14:15">| 처리완료</div>
               </div>
             </div>
 
@@ -1774,7 +1774,7 @@
               <div class="alert-content">
                 <div class="alert-title">Tank-04 온도 임계치 초과</div>
                 <div class="alert-desc">온도가 26.2°C로 상승하여 적정 범위를 벗어났습니다.</div>
-                <div class="alert-time">2025.01.15 11:20 | 처리완료</div>
+                <div class="alert-time" data-alert-offset="2" data-alert-hm="11:20">| 처리완료</div>
               </div>
             </div>
 
@@ -1783,7 +1783,7 @@
               <div class="alert-content">
                 <div class="alert-title">MQTT 연결 재수립</div>
                 <div class="alert-desc">Tank-02의 MQTT 연결이 일시적으로 끊겼다가 자동 재연결되었습니다.</div>
-                <div class="alert-time">2025.01.14 18:45 | 완료</div>
+                <div class="alert-time" data-alert-offset="3" data-alert-hm="18:45">| 완료</div>
               </div>
             </div>
           </div>
@@ -1874,28 +1874,41 @@ function generateTimeLabels() {
   return labels;
 }
 
-// Initialize with data from 9:00 to 16:30 (current time)
+// Calculate current time index dynamically
+function calcCurrentTimeIndex() {
+  const now = new Date();
+  const h = now.getHours();
+  const m = now.getMinutes();
+  // Chart starts at 09:00, each index = 5 minutes
+  const minutesSince9 = (h - 9) * 60 + m;
+  // Clamp between 0 and max index (108 = 18:00)
+  return Math.max(0, Math.min(Math.floor(minutesSince9 / 5), 108));
+}
+
+// Initialize with data from 9:00 to current time
 const timeLabels = generateTimeLabels();
+const initialTimeIndex = calcCurrentTimeIndex();
+
 Object.keys(chartDataByTank).forEach(tankId => {
   chartDataByTank[tankId].labels = [...timeLabels];
-  
+
   const baseTemp = tankId === '01' ? 23.2 : tankId === '02' ? 22.8 : tankId === '03' ? 24.1 : 23.6;
   const basePh = tankId === '01' ? 3.75 : tankId === '02' ? 3.85 : tankId === '03' ? 3.65 : 3.80;
   const baseCo2 = tankId === '01' ? 4.2 : tankId === '02' ? 3.9 : tankId === '03' ? 4.5 : 4.1;
   const baseBrix = tankId === '01' ? 12.8 : tankId === '02' ? 11.5 : tankId === '03' ? 13.5 : 12.3;
-  
+
   chartDataByTank[tankId].temp = new Array(timeLabels.length).fill(null);
   chartDataByTank[tankId].ph = new Array(timeLabels.length).fill(null);
   chartDataByTank[tankId].co2 = new Array(timeLabels.length).fill(null);
   chartDataByTank[tankId].brix = new Array(timeLabels.length).fill(null);
-  
-  // Fill data from 9:00 to 16:30 (90 data points = 7.5 hours * 12 points per hour)
-  for (let i = 0; i < 90; i++) {
+
+  // Fill data from 9:00 to current time dynamically
+  for (let i = 0; i < initialTimeIndex; i++) {
     const tempVariation = Math.sin(i / 10) * 0.8 + (Math.random() - 0.5) * 0.5;
     const phVariation = Math.sin(i / 15) * 0.08 + (Math.random() - 0.5) * 0.05;
     const co2Variation = Math.sin(i / 12) * 0.3 + (Math.random() - 0.5) * 0.2;
     const brixDecrease = i * 0.008; // Gradual decrease over time
-    
+
     chartDataByTank[tankId].temp[i] = baseTemp + tempVariation;
     chartDataByTank[tankId].ph[i] = basePh + phVariation;
     chartDataByTank[tankId].co2[i] = baseCo2 + co2Variation;
@@ -1903,7 +1916,7 @@ Object.keys(chartDataByTank).forEach(tankId => {
   }
 });
 
-let currentTimeIndex = 90;
+let currentTimeIndex = initialTimeIndex;
 let updateCounter = 0;
 
 // Charts
@@ -2117,7 +2130,7 @@ function initCharts() {
   reportChart = new Chart(reportCtx, {
     type: 'bar',
     data: {
-      labels: ['2025년 10월', '2025년 11월', '2025년 12월', '2026년 1월'],
+      labels: (function(){ const n=new Date(); const r=[]; for(let i=3;i>=0;i--){ const d=new Date(n); d.setMonth(d.getMonth()-i); r.push(d.getFullYear()+'년 '+(d.getMonth()+1)+'월'); } return r; })(),
       datasets: [{
         label: '생산량 (L)',
         data: [2950, 3200, 3080, 3450],
@@ -2197,6 +2210,50 @@ function updateTime() {
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   document.getElementById('currentDate').textContent = `${y}.${m}.${d}`;
+}
+
+// Populate dynamic dates on page load
+function populateDynamicDates() {
+  const now = new Date();
+  const fmtDate = (d) => `${d.getFullYear()}.${String(d.getMonth()+1).padStart(2,'0')}.${String(d.getDate()).padStart(2,'0')}`;
+
+  // Event log dates in tank detail (class="event-date")
+  document.querySelectorAll('.event-date').forEach(el => {
+    const offset = parseInt(el.dataset.offset || '0');
+    const hm = el.dataset.hm || '00:00';
+    const d = new Date(now); d.setDate(d.getDate() - offset);
+    el.textContent = `${fmtDate(d)} ${hm}`;
+  });
+
+  // Alert dates (data-alert-offset)
+  document.querySelectorAll('[data-alert-offset]').forEach(el => {
+    const offset = parseInt(el.dataset.alertOffset || '0');
+    const hm = el.dataset.alertHm || '00:00';
+    const d = new Date(now); d.setDate(d.getDate() - offset);
+    const suffix = el.textContent.trim();
+    el.textContent = `${fmtDate(d)} ${hm} ${suffix}`;
+  });
+
+  // Batch start dates (class="batch-start")
+  document.querySelectorAll('.batch-start').forEach(el => {
+    const daysAgo = parseInt(el.dataset.daysAgo || '0');
+    const d = new Date(now); d.setDate(d.getDate() - daysAgo);
+    el.textContent = fmtDate(d);
+  });
+
+  // Batch end dates (class="batch-end")
+  document.querySelectorAll('.batch-end').forEach(el => {
+    const daysAhead = parseInt(el.dataset.daysAhead || '0');
+    const d = new Date(now); d.setDate(d.getDate() + daysAhead);
+    el.textContent = fmtDate(d);
+  });
+
+  // Report period
+  const rp = document.getElementById('reportPeriod');
+  if (rp) {
+    const m3ago = new Date(now); m3ago.setMonth(m3ago.getMonth() - 3);
+    rp.textContent = `${m3ago.getFullYear()}년 ${m3ago.getMonth()+1}월 ~ 현재`;
+  }
 }
 
 // Update sensor data (every 2 seconds, but chart updates every 5 minutes)
@@ -2391,21 +2448,22 @@ function setupControls() {
       chartDataByTank[tankId].co2 = new Array(timeLabels.length).fill(null);
       chartDataByTank[tankId].brix = new Array(timeLabels.length).fill(null);
       
-      // Fill data from 9:00 to 16:30
-      for (let i = 0; i < 90; i++) {
+      // Fill data from 9:00 to current time dynamically
+      const resetIdx = calcCurrentTimeIndex();
+      for (let i = 0; i < resetIdx; i++) {
         const tempVariation = Math.sin(i / 10) * 0.8 + (Math.random() - 0.5) * 0.5;
         const phVariation = Math.sin(i / 15) * 0.08 + (Math.random() - 0.5) * 0.05;
         const co2Variation = Math.sin(i / 12) * 0.3 + (Math.random() - 0.5) * 0.2;
         const brixDecrease = i * 0.008;
-        
+
         chartDataByTank[tankId].temp[i] = baseTemp + tempVariation;
         chartDataByTank[tankId].ph[i] = basePh + phVariation;
         chartDataByTank[tankId].co2[i] = baseCo2 + co2Variation;
         chartDataByTank[tankId].brix[i] = baseBrix - brixDecrease + (Math.random() - 0.5) * 0.2;
       }
     });
-    
-    currentTimeIndex = 90;
+
+    currentTimeIndex = calcCurrentTimeIndex();
     updateCounter = 0;
     updateChart();
     updateSensorData();
@@ -2636,6 +2694,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   updateTime();
   updateSensorData();
+  populateDynamicDates();
 });
 </script>
 
